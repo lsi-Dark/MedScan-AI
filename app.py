@@ -158,7 +158,7 @@ st.markdown("""
         font-size: 12px;
     }
 
-    .slider-container {
+    .button-selector-box {
         background: rgba(15, 23, 42, 0.95);
         border: 1px solid rgba(56, 189, 248, 0.35);
         border-radius: 14px;
@@ -248,18 +248,40 @@ def load_lung_model():
     model.eval()
     return model
 
-# ============================= شريط السحب الرئيسي (يعمل على الهاتف والحاسبة) =============================
-st.markdown('<div class="slider-container">', unsafe_allow_html=True)
-st.markdown("<h4 style='color:#38bdf8; margin:0 0 10px 0;'>🎛️ اختر نمط الفحص الطبي (اسحب لتغيير العضو):</h4>", unsafe_allow_html=True)
-scan_type = st.select_slider(
-    label="اختيار نوع الفحص",
-    options=["🧠 أورام الدماغ (Brain MRI)", "🫁 سرطان الرئة (Chest CT)"],
-    value="🧠 أورام الدماغ (Brain MRI)",
-    label_visibility="collapsed"
-)
+# ============================= أزرار التبديل المباشرة (Buttons) =============================
+if "selected_mode" not in st.session_state:
+    st.session_state.selected_mode = "brain"
+
+st.markdown('<div class="button-selector-box">', unsafe_allow_html=True)
+st.markdown("<h4 style='color:#38bdf8; margin:0 0 12px 0;'>🎛️ اختر نمط الفحص الطبي المطلوب:</h4>", unsafe_allow_html=True)
+
+btn_col1, btn_col2 = st.columns(2)
+
+with btn_col1:
+    is_active_brain = (st.session_state.selected_mode == "brain")
+    if st.button(
+        "🧠 أورام الدماغ (Brain MRI)",
+        key="btn_brain",
+        use_container_width=True,
+        type="primary" if is_active_brain else "secondary"
+    ):
+        st.session_state.selected_mode = "brain"
+        st.rerun()
+
+with btn_col2:
+    is_active_lung = (st.session_state.selected_mode == "lung")
+    if st.button(
+        "🫁 سرطان الرئة (Chest CT)",
+        key="btn_lung",
+        use_container_width=True,
+        type="primary" if is_active_lung else "secondary"
+    ):
+        st.session_state.selected_mode = "lung"
+        st.rerun()
+
 st.markdown('</div>', unsafe_allow_html=True)
 
-is_brain = "Brain" in scan_type
+is_brain = (st.session_state.selected_mode == "brain")
 
 # ============================= القائمة الجانبية (Sidebar) =============================
 with st.sidebar:
@@ -526,7 +548,7 @@ with tab_how:
     st.markdown("<h2 style='text-align:right; color:#60a5fa;'>⚙️ آلية عمل خط المعالجة (Pipeline)</h2>", unsafe_allow_html=True)
 
     steps = [
-        ("1️⃣ اختيار نمط الفحص", "يحدد المستخدم نوع العضو المطلوب تحليله عبر شريط السحب (أورام الدماغ أو سرطان الرئة)."),
+        ("1️⃣ اختيار نمط الفحص", "يحدد المستخدم نوع العضو المطلوب تحليله عبر أزرار الفحص السريع (أورام الدماغ أو سرطان الرئة)."),
         ("2️⃣ المعالجة المسبقة (Preprocessing)", "تُحوّل الصورة إلى 3 قنوات وتُضبط أبعادها بدقة 224×224 مع تطبيع قيم البكسلات حسب معايير ImageNet."),
         ("3️⃣ الشبكات العصبية الالتفافية (CNN Backbones)", "يتم تمرير الصورة عبر ResNet-18 للدماغ أو ResNet-50 للرئة لاستخلاص الخصائص المجهرية للأنسجة بدقة عالية."),
         ("4️⃣ طبقة التصنيف (Softmax Head)", "تُحسب التوزيعات الاحتمالية لكل صنف طبي، وتُحدد الفئة الفائزة بأعلى نسبة يقين."),
