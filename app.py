@@ -157,6 +157,16 @@ st.markdown("""
         border-radius: 12px;
         font-size: 12px;
     }
+
+    .slider-container {
+        background: rgba(15, 23, 42, 0.95);
+        border: 1px solid rgba(56, 189, 248, 0.35);
+        border-radius: 14px;
+        padding: 16px 20px;
+        margin-bottom: 24px;
+        direction: rtl;
+        text-align: right;
+    }
     </style>
 """, unsafe_allow_html=True)
 
@@ -238,6 +248,19 @@ def load_lung_model():
     model.eval()
     return model
 
+# ============================= شريط السحب الرئيسي (يعمل على الهاتف والحاسبة) =============================
+st.markdown('<div class="slider-container">', unsafe_allow_html=True)
+st.markdown("<h4 style='color:#38bdf8; margin:0 0 10px 0;'>🎛️ اختر نمط الفحص الطبي (اسحب لتغيير العضو):</h4>", unsafe_allow_html=True)
+scan_type = st.select_slider(
+    label="اختيار نوع الفحص",
+    options=["🧠 أورام الدماغ (Brain MRI)", "🫁 سرطان الرئة (Chest CT)"],
+    value="🧠 أورام الدماغ (Brain MRI)",
+    label_visibility="collapsed"
+)
+st.markdown('</div>', unsafe_allow_html=True)
+
+is_brain = "Brain" in scan_type
+
 # ============================= القائمة الجانبية (Sidebar) =============================
 with st.sidebar:
     st.markdown("""
@@ -246,26 +269,11 @@ with st.sidebar:
             <h2 style="color: #60a5fa; margin: 6px 0 0 0; font-size: 1.4rem;">MedScan AI</h2>
         </div>
     """, unsafe_allow_html=True)
-    
-    st.markdown("""
-        <div class="sidebar-card">
-            <h3>🎛️ وحدة الفحص والتشخيص</h3>
-            <p>اختر العضو المطلوب فحصه باستخدام نماذج الرؤية الحاسوبية المتخصصة:</p>
-        </div>
-    """, unsafe_allow_html=True)
-
-    scan_type = st.radio(
-        "اختر نمط الفحص الطبي:",
-        ["🧠 أورام الدماغ (Brain MRI)", "🫁 سرطان الرئة (Chest CT)"],
-        index=0
-    )
-    
-    is_brain = "Brain" in scan_type
 
     st.markdown(f"""
         <div class="sidebar-card">
             <h3>⚙️ مواصفات النموذج الفعّال</h3>
-            <p style="margin-bottom: 4px;">• العضو: <b style="color:#38bdf8;">{'الدماغ (Brain)' if is_brain else 'الرئة (Lung)'}</b></p>
+            <p style="margin-bottom: 4px;">• العضو المختار: <b style="color:#38bdf8;">{'الدماغ (Brain)' if is_brain else 'الرئة (Lung)'}</b></p>
             <p style="margin-bottom: 4px;">• المعمارية: <b style="color:#38bdf8;">{'ResNet-18 Deep CNN' if is_brain else 'ResNet-50 Deep CNN'}</b></p>
             <p style="margin-bottom: 4px;">• المعالجة: <b style="color:#38bdf8;">PyTorch Engine</b></p>
             <p>• الفحص: <b style="color:#38bdf8;">تصنيف متعدد (4 Classes)</b></p>
@@ -518,7 +526,7 @@ with tab_how:
     st.markdown("<h2 style='text-align:right; color:#60a5fa;'>⚙️ آلية عمل خط المعالجة (Pipeline)</h2>", unsafe_allow_html=True)
 
     steps = [
-        ("1️⃣ اختيار نمط الفحص", "يحدد المستخدم من القائمة الجانبية نوع العضو المطلوب تحليله (أورام الدماغ أو سرطان الرئة)."),
+        ("1️⃣ اختيار نمط الفحص", "يحدد المستخدم نوع العضو المطلوب تحليله عبر شريط السحب (أورام الدماغ أو سرطان الرئة)."),
         ("2️⃣ المعالجة المسبقة (Preprocessing)", "تُحوّل الصورة إلى 3 قنوات وتُضبط أبعادها بدقة 224×224 مع تطبيع قيم البكسلات حسب معايير ImageNet."),
         ("3️⃣ الشبكات العصبية الالتفافية (CNN Backbones)", "يتم تمرير الصورة عبر ResNet-18 للدماغ أو ResNet-50 للرئة لاستخلاص الخصائص المجهرية للأنسجة بدقة عالية."),
         ("4️⃣ طبقة التصنيف (Softmax Head)", "تُحسب التوزيعات الاحتمالية لكل صنف طبي، وتُحدد الفئة الفائزة بأعلى نسبة يقين."),
