@@ -229,8 +229,24 @@ lung_info = {
 @st.cache_resource
 def load_brain_model():
     model = models.resnet18()
-    model.fc = nn.Linear(model.fc.in_features, len(brain_classes))
-    model.load_state_dict(torch.load("brain_tumor_model.pth", map_location=device))
+    num_ftrs = model.fc.in_features
+    # مطابقة رأس النموذج مع معمارية التدريب الصحيحة
+    model.fc = nn.Sequential(
+        nn.Linear(num_ftrs, 256),
+        nn.ReLU(),
+        nn.Dropout(0.3),
+        nn.Linear(256, len(brain_classes))
+    )
+    try:
+        checkpoint = torch.load("brain_tumor_model.pth", map_location=device, weights_only=False)
+    except TypeError:
+        checkpoint = torch.load("brain_tumor_model.pth", map_location=device)
+
+    if isinstance(checkpoint, dict) and 'model_state_dict' in checkpoint:
+        model.load_state_dict(checkpoint['model_state_dict'])
+    else:
+        model.load_state_dict(checkpoint)
+
     model = model.to(device)
     model.eval()
     return model
@@ -239,11 +255,16 @@ def load_brain_model():
 def load_lung_model():
     model = models.resnet50(weights=None)
     model.fc = nn.Linear(model.fc.in_features, len(lung_classes))
-    checkpoint = torch.load("lung_cancer_model.pth", map_location=device)
+    try:
+        checkpoint = torch.load("lung_cancer_model.pth", map_location=device, weights_only=False)
+    except TypeError:
+        checkpoint = torch.load("lung_cancer_model.pth", map_location=device)
+
     if isinstance(checkpoint, dict) and 'model_state_dict' in checkpoint:
         model.load_state_dict(checkpoint['model_state_dict'])
     else:
         model.load_state_dict(checkpoint)
+
     model = model.to(device)
     model.eval()
     return model
@@ -319,8 +340,8 @@ with st.sidebar:
 if is_brain:
     try:
         active_model = load_brain_model()
-    except Exception:
-        st.error("⚠️ لم يتم العثور على ملف brain_tumor_model.pth في المسار الحالي.")
+    except Exception as e:
+        st.error(f"⚠️ خطأ في تحميل ملف brain_tumor_model.pth: {e}")
         st.stop()
     active_classes = brain_classes
     active_info = brain_info
@@ -332,8 +353,8 @@ if is_brain:
 else:
     try:
         active_model = load_lung_model()
-    except Exception:
-        st.error("⚠️ لم يتم العثور على ملف lung_cancer_model.pth في المسار الحالي.")
+    except Exception as e:
+        st.error(f"⚠️ خطأ في تحميل ملف lung_cancer_model.pth: {e}")
         st.stop()
     active_classes = lung_classes
     active_info = lung_info
