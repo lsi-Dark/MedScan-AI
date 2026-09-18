@@ -230,17 +230,22 @@ lung_info = {
 def load_brain_model():
     model = models.resnet18()
     num_ftrs = model.fc.in_features
-    # مطابقة رأس النموذج مع معمارية التدريب الصحيحة
+    # مطابقة رأس النموذج مع معمارية التدريب الفعلية
     model.fc = nn.Sequential(
         nn.Linear(num_ftrs, 256),
         nn.ReLU(),
         nn.Dropout(0.3),
         nn.Linear(256, len(brain_classes))
     )
+    
+    model_path = "brain_tumor_model.pth"
+    if not os.path.exists(model_path):
+        raise FileNotFoundError(f"الملف {model_path} غير موجود في المسار الحالي.")
+
     try:
-        checkpoint = torch.load("brain_tumor_model.pth", map_location=device, weights_only=False)
+        checkpoint = torch.load(model_path, map_location=device, weights_only=False)
     except TypeError:
-        checkpoint = torch.load("brain_tumor_model.pth", map_location=device)
+        checkpoint = torch.load(model_path, map_location=device)
 
     if isinstance(checkpoint, dict) and 'model_state_dict' in checkpoint:
         model.load_state_dict(checkpoint['model_state_dict'])
@@ -255,10 +260,15 @@ def load_brain_model():
 def load_lung_model():
     model = models.resnet50(weights=None)
     model.fc = nn.Linear(model.fc.in_features, len(lung_classes))
+    model_path = "lung_cancer_model.pth"
+    
+    if not os.path.exists(model_path):
+        raise FileNotFoundError(f"الملف {model_path} غير موجود في المسار الحالي.")
+
     try:
-        checkpoint = torch.load("lung_cancer_model.pth", map_location=device, weights_only=False)
+        checkpoint = torch.load(model_path, map_location=device, weights_only=False)
     except TypeError:
-        checkpoint = torch.load("lung_cancer_model.pth", map_location=device)
+        checkpoint = torch.load(model_path, map_location=device)
 
     if isinstance(checkpoint, dict) and 'model_state_dict' in checkpoint:
         model.load_state_dict(checkpoint['model_state_dict'])
