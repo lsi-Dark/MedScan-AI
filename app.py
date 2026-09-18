@@ -229,18 +229,12 @@ lung_info = {
 @st.cache_resource
 def load_brain_model():
     model = models.resnet18()
-    num_ftrs = model.fc.in_features
-    # مطابقة رأس النموذج مع معمارية التدريب الفعلية
-    model.fc = nn.Sequential(
-        nn.Linear(num_ftrs, 256),
-        nn.ReLU(),
-        nn.Dropout(0.3),
-        nn.Linear(256, len(brain_classes))
-    )
+    # طبقة خطية مباشرة مطابقة للأوزان المحفوظة
+    model.fc = nn.Linear(model.fc.in_features, len(brain_classes))
     
     model_path = "brain_tumor_model.pth"
     if not os.path.exists(model_path):
-        raise FileNotFoundError(f"الملف {model_path} غير موجود في المسار الحالي.")
+        raise FileNotFoundError(f"الملف {model_path} غير موجود.")
 
     try:
         checkpoint = torch.load(model_path, map_location=device, weights_only=False)
@@ -263,7 +257,7 @@ def load_lung_model():
     model_path = "lung_cancer_model.pth"
     
     if not os.path.exists(model_path):
-        raise FileNotFoundError(f"الملف {model_path} غير موجود في المسار الحالي.")
+        raise FileNotFoundError(f"الملف {model_path} غير موجود.")
 
     try:
         checkpoint = torch.load(model_path, map_location=device, weights_only=False)
